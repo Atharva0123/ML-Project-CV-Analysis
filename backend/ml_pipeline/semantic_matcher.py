@@ -1,127 +1,148 @@
 """
-semantic_matcher.py
--------------------
-BERT-powered semantic skill matching using sentence-transformers.
+semantic_matcher.py  —  CRASH-PROOF BERT semantic skill matching
+----------------------------------------------------------------
+3-Layer Safety System:
+  Layer 1: BERT model load failure → graceful fallback to keyword matching
+  Layer 2: BERT inference failure  → graceful fallback to keyword matching  
+  Layer 3: Any unexpected error    → always returns a valid dict, never raises
 
-Instead of brittle keyword matching (Python == Python, nothing else),
-this module encodes both candidate skills and job requirements into
-dense vector embeddings and computes cosine similarity.
-
-Example:
-    "Built neural networks" → 94% match with "Machine Learning"
-    "Developed REST APIs"   → 91% match with "Backend Development"
-    "React.js"              → 98% match with "React"
+The website will NEVER crash because of this module.
 """
 
 import numpy as np
-from sentence_transformers import SentenceTransformer, util
+import logging
 
-# We use the lightweight MiniLM model — only 80MB, very fast on CPU,
-# and highly accurate for short skill phrases.
-# It is downloaded once automatically and cached locally.
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+logger = logging.getLogger(__name__)
 
-_model = None  # Lazy-loaded singleton to avoid loading on import
-
-def _get_model() -> SentenceTransformer:
-    """Lazy-load and cache the BERT model."""
-    global _model
-    if _model is None:
-        print("[BERT] Loading semantic model: all-MiniLM-L6-v2...")
-        _model = SentenceTransformer(MODEL_NAME)
-        print("[BERT] Model loaded successfully.")
-    return _model
+MODEL_NAME   = "sentence-transformers/all-MiniLM-L6-v2"
+_model       = None          # Lazy-loaded singleton
+_model_ok    = None          # None=untried, True=loaded, False=failed permanently
 
 
+# ─────────────────────────────────────────────────────────────
+#  LAYER 1: Safe model loader — one-time attempt, never retries
+# ─────────────────────────────────────────────────────────────
+def _get_model():
+    """
+    Try to load the BERT model once.
+    If it fails for any reason (memory, missing package, network),
+    we set _model_ok=False and all future calls skip BERT silently.
+    """
+    global _model, _model_ok
+
+    if _model_ok is True:        # Already loaded successfully
+        return _model
+    if _model_ok is False:       # Already failed — don't retry
+        return None
+
+    try:
+        from sentence_transformers import SentenceTransformer
+        logger.info("[BERT] Loading all-MiniLM-L6-v2...")
+        _model    = SentenceTransformer(MODEL_NAME)
+        _model_ok = True
+        logger.info("[BERT] Model loaded OK.")
+        return _model
+    except Exception as exc:
+        _model_ok = False
+        logger.warning(f"[BERT] Could not load — falling back to keyword matching. Reason: {exc}")
+        return None
+
+
+# ─────────────────────────────────────────────────────────────
+#  LAYER 2 & 3: Keyword fallback (always safe)
+# ─────────────────────────────────────────────────────────────
+def _keyword_fallback(candidate_skills: list, required_skills: list) -> dict:
+    """Plain set-intersection — zero dependencies, can never crash."""
+    cand_lower = {s.lower() for s in candidate_skills}
+    matched    = [r for r in required_skills if r.lower() in cand_lower]
+    missing    = [r for r in required_skills if r.lower() not in cand_lower]
+    pct        = (len(matched) / len(required_skills) * 100) if required_skills else 75.0
+    details    = [
+        {"required": r, "best_match": r if r in matched else None,
+         "confidence": 100.0 if r in matched else 0.0, "matched": r in matched}
+        for r in required_skills
+    ]
+    return {"matched_skills": matched, "missing_skills": missing,
+            "skill_match_pct": round(pct, 2), "match_details": details,
+            "engine": "keyword"}
+
+
+# ─────────────────────────────────────────────────────────────
+#  Public API
+# ─────────────────────────────────────────────────────────────
 def semantic_skill_match(
-    candidate_skills: list[str],
-    required_skills: list[str],
+    candidate_skills: list,
+    required_skills:  list,
     similarity_threshold: float = 0.55
 ) -> dict:
     """
-    Perform semantic skill matching using BERT embeddings.
+    Semantically match candidate skills against required skills.
 
-    Args:
-        candidate_skills:    List of skills extracted from the candidate's CV.
-        required_skills:     List of skills required by the target company/role.
-        similarity_threshold: Cosine similarity score (0-1) above which a
-                              candidate skill is considered a match.
-                              0.55 is a good balance between precision and recall.
-
-    Returns:
-        A dict with:
-          - matched_skills:    Required skills the candidate semantically covers
-          - missing_skills:    Required skills the candidate is lacking
-          - skill_match_pct:   Overall % match score
-          - match_details:     Per-skill breakdown with best match and confidence
+    Returns a safe dict with:
+      matched_skills, missing_skills, skill_match_pct, match_details, engine
+    
+    NEVER raises — always returns a valid result even if BERT fails.
     """
+    # ── Edge cases ───────────────────────────────────────────
     if not required_skills:
-        return {
-            "matched_skills": [],
-            "missing_skills": [],
-            "skill_match_pct": 75.0,
-            "match_details": []
-        }
-
+        return {"matched_skills": [], "missing_skills": [],
+                "skill_match_pct": 75.0, "match_details": [], "engine": "none"}
     if not candidate_skills:
-        return {
-            "matched_skills": [],
-            "missing_skills": required_skills,
-            "skill_match_pct": 0.0,
-            "match_details": [{"required": s, "best_match": None, "confidence": 0.0, "matched": False} for s in required_skills]
-        }
+        return {"matched_skills": [], "missing_skills": required_skills,
+                "skill_match_pct": 0.0, "match_details": [
+                    {"required": s, "best_match": None, "confidence": 0.0, "matched": False}
+                    for s in required_skills
+                ], "engine": "none"}
 
+    # ── Layer 1: try BERT ────────────────────────────────────
     model = _get_model()
+    if model is None:
+        # BERT unavailable — use keyword fallback
+        return _keyword_fallback(candidate_skills, required_skills)
 
-    # Encode all skills into dense vectors in one batch (fast)
-    candidate_embeddings = model.encode(candidate_skills, convert_to_tensor=True)
-    required_embeddings  = model.encode(required_skills,  convert_to_tensor=True)
+    # ── Layer 2: safe BERT inference ─────────────────────────
+    try:
+        from sentence_transformers import util
 
-    # Compute cosine similarity matrix: shape (n_required, n_candidate)
-    cos_scores = util.cos_sim(required_embeddings, candidate_embeddings)
+        cand_emb = model.encode(candidate_skills, convert_to_tensor=True)
+        req_emb  = model.encode(required_skills,  convert_to_tensor=True)
+        cos      = util.cos_sim(req_emb, cand_emb)
 
-    matched_skills = []
-    missing_skills = []
-    match_details  = []
+        matched, missing, details = [], [], []
 
-    for i, req_skill in enumerate(required_skills):
-        # Best matching candidate skill for this required skill
-        scores_for_req = cos_scores[i].cpu().numpy()
-        best_idx       = int(np.argmax(scores_for_req))
-        best_score     = float(scores_for_req[best_idx])
-        best_cand_skill = candidate_skills[best_idx]
+        for i, req in enumerate(required_skills):
+            scores      = cos[i].cpu().numpy()
+            best_idx    = int(np.argmax(scores))
+            best_score  = float(scores[best_idx])
+            best_skill  = candidate_skills[best_idx]
+            is_match    = best_score >= similarity_threshold
 
-        is_matched = best_score >= similarity_threshold
+            (matched if is_match else missing).append(req)
+            details.append({
+                "required":   req,
+                "best_match": best_skill if is_match else None,
+                "confidence": round(best_score * 100, 1),
+                "matched":    is_match,
+            })
 
-        if is_matched:
-            matched_skills.append(req_skill)
-        else:
-            missing_skills.append(req_skill)
+        pct = (len(matched) / len(required_skills)) * 100
+        return {"matched_skills": matched, "missing_skills": missing,
+                "skill_match_pct": round(pct, 2), "match_details": details,
+                "engine": "bert"}
 
-        match_details.append({
-            "required":    req_skill,
-            "best_match":  best_cand_skill if is_matched else None,
-            "confidence":  round(best_score * 100, 1),   # as percentage
-            "matched":     is_matched
-        })
-
-    skill_match_pct = (len(matched_skills) / len(required_skills)) * 100
-
-    return {
-        "matched_skills":  matched_skills,
-        "missing_skills":  missing_skills,
-        "skill_match_pct": round(skill_match_pct, 2),
-        "match_details":   match_details
-    }
+    except Exception as exc:
+        # ── Layer 3: catch-all — fall through to keyword ─────
+        logger.error(f"[BERT] Inference failed, using keyword fallback: {exc}")
+        return _keyword_fallback(candidate_skills, required_skills)
 
 
 if __name__ == "__main__":
-    # Quick test to verify it works
-    candidate = ["neural networks", "deep learning", "Python", "built REST APIs"]
-    required  = ["Machine Learning", "Python", "Backend Development", "SQL"]
-    result = semantic_skill_match(candidate, required)
-    print("\n=== BERT Semantic Skill Match Test ===")
-    for detail in result["match_details"]:
-        status = "✅" if detail["matched"] else "❌"
-        print(f"  {status} {detail['required']}: best match → '{detail['best_match']}' ({detail['confidence']}%)")
-    print(f"\n  Overall match: {result['skill_match_pct']}%")
+    result = semantic_skill_match(
+        ["neural networks", "deep learning", "Python", "built REST APIs"],
+        ["Machine Learning", "Python", "Backend Development", "SQL"]
+    )
+    print(f"\nEngine: {result['engine']}")
+    for d in result["match_details"]:
+        icon = "✅" if d["matched"] else "❌"
+        print(f"  {icon} {d['required']} → '{d['best_match']}' ({d['confidence']}%)")
+    print(f"  Overall: {result['skill_match_pct']}%")

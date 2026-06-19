@@ -383,13 +383,17 @@ const Dashboard = ({ result, metrics, onBack }) => {
     placement_probability,
     placement_status,
     skill_match_pct,
-    matched_skills,
-    missing_skills,
+    matched_skills   = [],
+    missing_skills   = [],
     github_analysis,
     market_pulse_adjustments,
     hiring_analysis,
-    experience_level
+    experience_level,
+    match_details    = [],   // BERT per-skill breakdown — optional, never crashes
   } = result;
+
+  // Safe: BERT panel only shows when real data exists
+  const hasBertData = Array.isArray(match_details) && match_details.length > 0;
 
   const statusColor = placement_probability > 75 ? '#10b981' : placement_probability > 45 ? '#f59e0b' : '#ef4444';
   const reasons = generateReasons(placement_probability, skill_match_pct, matched_skills, missing_skills);
@@ -509,6 +513,7 @@ const Dashboard = ({ result, metrics, onBack }) => {
       <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/10">
         {[
           { id: 'overview', icon: <FiBarChart2 />, label: 'Overview' },
+          { id: 'bert', icon: <FiCpu />, label: 'AI Match', badge: hasBertData },
           { id: 'hiring', icon: <FiBriefcase />, label: 'Hiring Analysis' },
           { id: 'verification', icon: <FiShield />, label: 'Verification' },
           { id: 'learning', icon: <FiBookOpen />, label: 'Learning' },
@@ -518,9 +523,13 @@ const Dashboard = ({ result, metrics, onBack }) => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id ? 'bg-violet-600 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-xl text-sm font-bold transition-all relative ${activeTab === tab.id ? 'bg-violet-600 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
           >
-            {tab.icon} <span className="hidden sm:inline">{tab.label}</span>
+            {tab.icon}
+            <span className="hidden sm:inline">{tab.label}</span>
+            {tab.badge && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Powered by BERT AI" />
+            )}
           </button>
         ))}
       </div>
