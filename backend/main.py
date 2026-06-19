@@ -162,6 +162,7 @@ class AnalysisResponse(BaseModel):
     market_pulse_adjustments: Optional[dict] = None
     hiring_analysis: Optional[dict] = None
     experience_level: Optional[str] = None
+    match_details: Optional[List[dict]] = None   # BERT per-skill confidence breakdown
 
 @app.on_event("startup")
 async def startup_event():
@@ -346,7 +347,8 @@ async def analyze_cv(
         github_analysis=github_analysis,
         market_pulse_adjustments=market_pulse,
         hiring_analysis=hiring_analysis,
-        experience_level=experience_level or "fresher"
+        experience_level=experience_level or "fresher",
+        match_details=prediction.get('match_details', [])   # BERT semantic breakdown
     )
 
 
