@@ -122,7 +122,6 @@ const RegisterPopup = ({ isOpen, onClose, onAuthSuccess }) => {
           <button
             type="button"
             onClick={async () => {
-              setLoading(true);
               setError('');
               try {
                 if (!window.google) {
@@ -131,55 +130,59 @@ const RegisterPopup = ({ isOpen, onClose, onAuthSuccess }) => {
                 window.google.accounts.id.initialize({
                   client_id: '685412957904-u8g9up175t4j5b8q260840p0e2d19277.apps.googleusercontent.com', // fallback/default Google client ID
                   callback: async (response) => {
-                    if (!response.credential) {
-                      setError('Google verification cancelled.');
-                      setLoading(false);
-                      return;
-                    }
-                    // Parse credentials JWT
-                    const base64Url = response.credential.split('.')[1];
-                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                    const payload = JSON.parse(window.atob(base64));
-                    
-                    // Pre-fill email and name from verified Google Account
-                    setEmail(payload.email || '');
-                    setName(payload.name || '');
-                    
-                    // Automatic Google Login/Register call
-                    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-                      ? 'http://localhost:8000'
-                      : 'https://tonycv-backend.onrender.com';
+                    setLoading(true);
+                    setError('');
+                    try {
+                      if (!response.credential) {
+                        throw new Error('Google verification cancelled.');
+                      }
+                      // Parse credentials JWT
+                      const base64Url = response.credential.split('.')[1];
+                      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                      const payload = JSON.parse(window.atob(base64));
                       
-                    const authRes = await fetch(`${API_BASE_URL}/auth/google`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        google_id_token: response.credential,
-                        name: payload.name || payload.email.split('@')[0],
-                        email: payload.email,
-                        google_id: payload.sub,
-                        device_fingerprint: 'web-fingerprint-' + payload.email
-                      })
-                    });
-                    
-                    const data = await authRes.json();
-                    if (!authRes.ok) {
-                      throw new Error(data.detail || 'Google authentication failed');
+                      // Pre-fill email and name from verified Google Account
+                      setEmail(payload.email || '');
+                      setName(payload.name || '');
+                      
+                      // Automatic Google Login/Register call
+                      const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                        ? 'http://localhost:8000'
+                        : 'https://tonycv-backend.onrender.com';
+                        
+                      const authRes = await fetch(`${API_BASE_URL}/auth/google`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          google_id_token: response.credential,
+                          name: payload.name || payload.email.split('@')[0],
+                          email: payload.email,
+                          google_id: payload.sub,
+                          device_fingerprint: 'web-fingerprint-' + payload.email
+                        })
+                      });
+                      
+                      const data = await authRes.json().catch(() => ({}));
+                      if (!authRes.ok) {
+                        throw new Error(data.detail || 'Google authentication failed');
+                      }
+                      
+                      localStorage.setItem('tonycv_token', data.access_token);
+                      localStorage.setItem('tonycv_user', JSON.stringify(data.user));
+                      setSuccessMsg('Verified with Google successfully!');
+                      setTimeout(() => {
+                        if (onAuthSuccess) onAuthSuccess(data.user);
+                        onClose();
+                      }, 1200);
+                    } catch (innerErr) {
+                      setError(innerErr.message || 'Google verification failed.');
+                      setLoading(false);
                     }
-                    
-                    localStorage.setItem('tonycv_token', data.access_token);
-                    localStorage.setItem('tonycv_user', JSON.stringify(data.user));
-                    setSuccessMsg('Verified with Google successfully!');
-                    setTimeout(() => {
-                      if (onAuthSuccess) onAuthSuccess(data.user);
-                      onClose();
-                    }, 1200);
                   }
                 });
                 window.google.accounts.id.prompt();
               } catch (err) {
                 setError(err.message || 'Google verification failed.');
-                setLoading(false);
               }
             }}
             className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition"
