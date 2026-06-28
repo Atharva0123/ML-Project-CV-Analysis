@@ -128,7 +128,7 @@ const RegisterPopup = ({ isOpen, onClose, onAuthSuccess }) => {
                   throw new Error("Google API script not loaded. Please refresh the page.");
                 }
                 window.google.accounts.id.initialize({
-                  client_id: '685412957904-u8g9up175t4j5b8q260840p0e2d19277.apps.googleusercontent.com', // fallback/default Google client ID
+                  client_id: '132721264540-a2794sbnqvens788p1tqe26asn0q1i9r.apps.googleusercontent.com',
                   callback: async (response) => {
                     setLoading(true);
                     setError('');

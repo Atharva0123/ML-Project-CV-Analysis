@@ -63,7 +63,7 @@ const GoogleSignInButton = ({ onSuccess, onError, fingerprint, isLoading }) => {
       return;
     }
     window.google.accounts.id.initialize({
-      client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com', // ← Replace with your Google Client ID
+      client_id: '132721264540-a2794sbnqvens788p1tqe26asn0q1i9r.apps.googleusercontent.com',
       callback: async (response) => {
         if (!response.credential) {
           onError('Google sign-in was cancelled.');

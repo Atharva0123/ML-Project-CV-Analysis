@@ -4,8 +4,12 @@
 [![Python: 3.12+](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/)
 [![React: 19](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
 [![ML: Scikit-Learn](https://img.shields.io/badge/ML-Scikit--Learn-F7931E.svg)](https://scikit-learn.org/)
+[![Frontend: GitHub Pages](https://img.shields.io/badge/Frontend-GitHub%20Pages-222222.svg)](https://prashant-singh-rawat.github.io/ML-Project-CV-Analysis/)
+[![Backend: Render](https://img.shields.io/badge/Backend-Render-46E3B7.svg)](https://tonycv-backend.onrender.com)
 
 **TonyCV** is a state-of-the-art, end-to-end recruitment intelligence platform designed to bridge the gap between candidates and recruiters using advanced Natural Language Processing (NLP) and Machine Learning (ML). It transforms static resumes into dynamic, data-driven career roadmaps while providing recruiters with verified, high-confidence candidate scores.
+
+🌐 **Live App**: [prashant-singh-rawat.github.io/ML-Project-CV-Analysis](https://prashant-singh-rawat.github.io/ML-Project-CV-Analysis/)
 
 ---
 
@@ -13,9 +17,9 @@
 
 TonyCV utilizes a decoupled micro-architecture designed for scalability and high-performance analysis:
 
-- **Frontend Application**: A React 19 (Vite) single-page application utilizing atomic design principles, glassmorphic UI, and real-time state persistence.
+- **Frontend Application**: A React 19 (Vite) single-page application hosted on **GitHub Pages**, utilizing atomic design principles, glassmorphic UI, and real-time state persistence.
 - **Mobile Application**: A native Android build wrapped using Capacitor for mobile recruitment experiences.
-- **NLP & ML Engine**: A FastAPI (Python) backend serving as the core computational layer, handling vector extraction and predictive inference.
+- **NLP & ML Engine**: A FastAPI (Python) backend deployed on **Render**, serving as the core computational layer, handling vector extraction and predictive inference.
 - **Data Persistence**: LocalStorage and session-based state management for ultra-fast, offline-capable performance.
 
 ---
@@ -67,12 +71,14 @@ An AI-driven practice module tracking technical responses. (Note: Current versio
 | **Backend** | FastAPI, Uvicorn, Python 3.12+ |
 | **ML/Analytics** | Scikit-Learn, Pandas, NumPy, Joblib |
 | **NLP** | spaCy (en_core_web_sm), PDFPlumber, RE |
+| **Frontend Hosting** | GitHub Pages |
+| **Backend Hosting** | Render (Web Service) |
 | **CI/CD** | GitHub Actions Pipeline (Automated testing & linting) |
 | **Export** | Browser Print-to-PDF Engine (Custom HTML Templates) |
 
 ---
 
-## 🚀 Installation & Deployment
+## 🚀 Local Development Setup
 
 ### Prerequisites
 - Node.js v18+
@@ -121,6 +127,58 @@ npx cap sync android
 cd android
 ./gradlew assembleRelease
 ```
+
+---
+
+## ☁️ Production Deployment
+
+TonyCV uses a **split deployment** strategy — the frontend and backend are hosted on separate platforms for optimal performance and cost:
+
+| Layer | Platform | URL |
+| :--- | :--- | :--- |
+| **Frontend** | GitHub Pages | [prashant-singh-rawat.github.io/ML-Project-CV-Analysis](https://prashant-singh-rawat.github.io/ML-Project-CV-Analysis/) |
+| **Backend API** | Render (Web Service) | [tonycv-backend.onrender.com](https://tonycv-backend.onrender.com) |
+
+---
+
+### Backend — Render Web Service (Python / FastAPI)
+
+| Property | Value |
+| :--- | :--- |
+| **Platform** | Render Web Service |
+| **Runtime** | Python 3.10 |
+| **Root Directory** | `backend/` |
+| **Build Command** | `pip install -r requirements.txt` |
+| **Start Command** | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
+| **Config File** | `render.yaml` (root of repo) |
+| **Environment Vars** | `JWT_SECRET_KEY` (set in Render Dashboard) |
+
+**Deploy Backend to Render:**
+1. Go to [Render Dashboard](https://dashboard.render.com) → **New → Blueprint**
+2. Connect your GitHub repository
+3. Render detects `render.yaml` and sets up the backend service automatically
+4. Set `JWT_SECRET_KEY` under the service → **Environment** tab
+5. Click **Apply** — the backend will build and deploy
+
+---
+
+### Frontend — GitHub Pages (React / Vite)
+
+| Property | Value |
+| :--- | :--- |
+| **Platform** | GitHub Pages |
+| **Build Output** | `frontend/dist/` |
+| **Live URL** | `https://prashant-singh-rawat.github.io/ML-Project-CV-Analysis/` |
+
+**Deploy Frontend to GitHub Pages:**
+```bash
+cd frontend
+npm install
+npm run build
+# The dist/ folder is then published via the gh-pages branch or GitHub Actions
+```
+
+> The frontend communicates with the Render backend via the hardcoded API base URL (`https://tonycv-backend.onrender.com`) with a `localhost` fallback for local development.
 
 ---
 
