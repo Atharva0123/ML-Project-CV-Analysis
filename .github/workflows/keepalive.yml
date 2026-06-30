@@ -2,14 +2,35 @@ name: Keep Render Awake
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   # every 15 minutes
+    - cron: "*/14 * * * *"   # every 14 minutes (avoids the 15-min sleep threshold)
   workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
-      - name: Ping backend
+      - name: Wake up and ping backend
         run: |
-          curl -fsS https://tonycv-backend.onrender.com/health
+          echo "Pinging backend to prevent cold start..."
+          # --max-time 120  = wait up to 2 minutes for Render to wake up
+          # --retry 3       = retry 3 times if it fails
+          # --retry-delay 10 = wait 10s between retries
+          # --retry-connrefused = also retry on connection refused
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}" \
+            --max-time 120 \
+            --retry 3 \
+            --retry-delay 10 \
+            --retry-connrefused \
+            https://tonycv-backend.onrender.com/health)
+          
+          echo "Backend responded with HTTP $STATUS"
+          
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Backend is alive!"
+          else
+            echo "⚠️ Backend returned $STATUS — may still be starting up"
+            # Don't fail the workflow — Render may just need more time
+            exit 0
+          fi

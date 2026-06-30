@@ -123,6 +123,14 @@ const CompanyDropdown = ({ value, onChange, companies }) => {
   );
 };
 
+const LOADING_STAGES = [
+  { after: 0,  text: '⏳ Waking up AI server…',              sub: 'First request may take up to 60s on free tier' },
+  { after: 15, text: '📄 Parsing your PDF…',                 sub: 'Extracting text and structure' },
+  { after: 30, text: '🧠 Running NLP & BERT matching…',     sub: 'Computing keyword similarity vectors' },
+  { after: 50, text: '📊 Building your score report…',      sub: 'Generating AI recommendations' },
+  { after: 70, text: '🚀 Almost done — finalising report…', sub: 'Hang tight, nearly there!' },
+];
+
 const InputForm = ({ onAnalyze, isLoading, companies }) => {
   const [cvFile, setCvFile]             = useState(null);
   const [cgpa, setCgpa]                 = useState('');
@@ -130,6 +138,8 @@ const InputForm = ({ onAnalyze, isLoading, companies }) => {
   const [githubUrl, setGithubUrl]       = useState('');
   const [experienceLevel, setExperienceLevel] = useState('fresher');
   const [dragOver, setDragOver]         = useState(false);
+  const [elapsed, setElapsed]           = useState(0);
+  const elapsedRef                      = useRef(null);
 
   // Voice Input State
   const [isListening, setIsListening]   = useState(false);
@@ -175,6 +185,21 @@ const InputForm = ({ onAnalyze, isLoading, companies }) => {
       recognitionRef.current = recognition;
     }
   }, []);
+
+  // Start / stop the elapsed-seconds timer whenever isLoading changes
+  useEffect(() => {
+    if (isLoading) {
+      setElapsed(0);
+      elapsedRef.current = setInterval(() => setElapsed(s => s + 1), 1000);
+    } else {
+      clearInterval(elapsedRef.current);
+      setElapsed(0);
+    }
+    return () => clearInterval(elapsedRef.current);
+  }, [isLoading]);
+
+  // Pick the loading stage message based on elapsed seconds
+  const loadingStage = LOADING_STAGES.slice().reverse().find(s => elapsed >= s.after) || LOADING_STAGES[0];
 
   const toggleVoice = () => {
     if (!recognitionRef.current) return;
@@ -363,24 +388,41 @@ const InputForm = ({ onAnalyze, isLoading, companies }) => {
           />
         </div>
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={isLoading || !cvFile}
-          className="w-full py-4 rounded-2xl text-white font-extrabold text-base shadow-lg disabled:opacity-60 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-          style={{ background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)' }}
-        >
-          {isLoading ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Grading & Matching CV...
-            </>
-          ) : (
-            <>
-              Upload & Grade CV <FiArrowRight />
-            </>
-          )}
-        </button>
+        {/* Submit Button + Loading Progress */}
+        {isLoading ? (
+          <div className="w-full rounded-2xl overflow-hidden border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
+            {/* Progress bar */}
+            <div className="h-1.5 bg-blue-100 rounded-full mb-3 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-1000"
+                style={{ width: `${Math.min(95, (elapsed / 90) * 100)}%` }}
+              />
+            </div>
+            {/* Status text */}
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-blue-800">{loadingStage.text}</p>
+                <p className="text-xs text-blue-500 mt-0.5">{loadingStage.sub}</p>
+              </div>
+              <span className="ml-auto text-xs font-mono text-blue-400">{elapsed}s</span>
+            </div>
+            {elapsed >= 55 && (
+              <p className="mt-2 text-xs text-amber-600 font-semibold text-center">
+                ⚡ Still working — free servers can take up to 90s on first request. Please don't close this tab!
+              </p>
+            )}
+          </div>
+        ) : (
+          <button
+            type="submit"
+            disabled={!cvFile}
+            className="w-full py-4 rounded-2xl text-white font-extrabold text-base shadow-lg disabled:opacity-60 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+            style={{ background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)' }}
+          >
+            Upload & Grade CV <FiArrowRight />
+          </button>
+        )}
       </form>
     </div>
   );
