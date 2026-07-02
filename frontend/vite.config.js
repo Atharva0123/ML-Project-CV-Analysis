@@ -11,4 +11,10 @@ export default defineConfig({
     host: true,
     strictPort: true,
   },
+  test: {
+    // Only run unit tests in src/ - exclude Playwright e2e tests
+    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+    exclude: ['e2e/**', 'node_modules/**'],
+    environment: 'jsdom',
+  },
 })
