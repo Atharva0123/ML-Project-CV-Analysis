@@ -1,19 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { motion } from 'framer-motion';
+import api from '../services/api';
 import Dashboard from '../components/Dashboard';
 
-const isLocal =
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname.startsWith('192.168.') ||
-  window.location.hostname.startsWith('172.') ||
-  window.location.hostname.startsWith('10.');
-
-const API_BASE_URL = isLocal
-  ? `http://${window.location.hostname}:8000`
-  : 'https://tonycv-backend.onrender.com';
 
 export default function DashboardPage() {
   const location = useLocation();
@@ -30,7 +19,7 @@ export default function DashboardPage() {
   }, [result, navigate]);
 
   useEffect(() => {
-    axios.get(`${API_BASE_URL}/metrics`)
+    api.get(`/metrics`)
       .then(res => { if (res.data) setMetrics(res.data); })
       .catch(() => {});
   }, []);

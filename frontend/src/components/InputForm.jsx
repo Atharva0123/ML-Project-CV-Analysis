@@ -137,14 +137,14 @@ const InputForm = ({ onAnalyze, isLoading, companies }) => {
   const [targetCompany, setTargetCompany] = useState('');
   const [githubUrl, setGithubUrl]       = useState('');
   const [experienceLevel, setExperienceLevel] = useState('fresher');
-  const [dragOver, setDragOver]         = useState(false);
+  const [, setDragOver]         = useState(false);
   const [elapsed, setElapsed]           = useState(0);
   const elapsedRef                      = useRef(null);
 
   // Voice Input State
   const [isListening, setIsListening]   = useState(false);
   const [voiceText, setVoiceText]       = useState('');
-  const [detectedSkills, setDetectedSkills] = useState([]);
+  const [, setDetectedSkills] = useState([]);
   const recognitionRef                  = useRef(null);
 
   const KNOWN_SKILLS = [
@@ -184,6 +184,7 @@ const InputForm = ({ onAnalyze, isLoading, companies }) => {
       recognition.onend   = () => setIsListening(false);
       recognitionRef.current = recognition;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Start / stop the elapsed-seconds timer whenever isLoading changes
@@ -193,7 +194,6 @@ const InputForm = ({ onAnalyze, isLoading, companies }) => {
       elapsedRef.current = setInterval(() => setElapsed(s => s + 1), 1000);
     } else {
       clearInterval(elapsedRef.current);
-      setElapsed(0);
     }
     return () => clearInterval(elapsedRef.current);
   }, [isLoading]);
@@ -201,7 +201,7 @@ const InputForm = ({ onAnalyze, isLoading, companies }) => {
   // Pick the loading stage message based on elapsed seconds
   const loadingStage = LOADING_STAGES.slice().reverse().find(s => elapsed >= s.after) || LOADING_STAGES[0];
 
-  const toggleVoice = () => {
+  const _toggleVoice = () => {
     if (!recognitionRef.current) return;
     if (isListening) {
       recognitionRef.current.stop();
@@ -214,7 +214,7 @@ const InputForm = ({ onAnalyze, isLoading, companies }) => {
     }
   };
 
-  const removeSkill = (skill) => setDetectedSkills(prev => prev.filter(s => s !== skill));
+  const _removeSkill = (skill) => setDetectedSkills(prev => prev.filter(s => s !== skill));
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -245,7 +245,7 @@ const InputForm = ({ onAnalyze, isLoading, companies }) => {
     }
   };
 
-  const supportsVoice = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+  const _supportsVoice = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
 
   const companyList = companies && companies.length > 0 ? companies : [
     "Google", "Amazon", "Microsoft", "Meta", "Apple",

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import InputForm from '../components/InputForm';
 import {
   FiUploadCloud, FiEdit3, FiArrowRight, FiArrowLeft, FiX,
@@ -16,16 +16,7 @@ import HealthcareProfessionalTemplate from '../components/templates/HealthcarePr
 import BusinessExecutiveTemplate from '../components/templates/BusinessExecutiveTemplate';
 import CreativeDesignerTemplate from '../components/templates/CreativeDesignerTemplate';
 
-const isLocal =
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname.startsWith('192.168.') ||
-  window.location.hostname.startsWith('172.') ||
-  window.location.hostname.startsWith('10.');
 
-const API_BASE_URL = isLocal
-  ? `http://${window.location.hostname}:8000`
-  : 'https://tonycv-backend.onrender.com';
 
 const FALLBACK_COMPANIES = [
   'Google', 'Amazon', 'Microsoft', 'Meta', 'Apple',
@@ -345,7 +336,7 @@ function getRouterState() {
 
 export default function Analyze() {
   const navigate = useNavigate();
-  const location = useLocation();
+
 
   // ── Lazy initialisers: read router state once, synchronously ──
   // This means the correct step is set on the VERY FIRST render —
@@ -355,7 +346,7 @@ export default function Analyze() {
     return s?.startMode === 'scratch' ? 'wizard_experience' : 'option_select';
   });
 
-  const [selectedOption, setSelectedOption] = useState(() => {
+  const [, setSelectedOption] = useState(() => {
     const s = getRouterState();
     return s?.startMode === 'scratch' ? 'scratch' : null;
   });
@@ -426,7 +417,7 @@ export default function Analyze() {
       fd.append('file', file);
       fd.append('target_company', companies[0] || 'Google');
       fd.append('job_description', '');
-      const res = await axios.post(`${API_BASE_URL}/analyze`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const res = await api.post(`/analyze`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       navigate('/dashboard', { state: { analysisData: res.data } });
     } catch (err) {
       setError(err?.response?.data?.detail || 'Could not analyse your resume. Please try again.');

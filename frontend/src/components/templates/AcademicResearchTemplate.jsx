@@ -1,7 +1,7 @@
 import React from 'react';
 import { FiMail, FiPhone, FiMapPin, FiLinkedin, FiGlobe, FiBookOpen, FiAward, FiFileText } from 'react-icons/fi';
 
-export default function AcademicResearchTemplate({ data, color, photoEnabled }) {
+export default function AcademicResearchTemplate({ data, color }) {
   const accentColor = color || '#0891b2';
   const experiences = data.experience || [];
   const education = data.education || [];

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiMessageSquare, FiX, FiVolume2, FiMic, FiMicOff, FiSend } from 'react-icons/fi';
 
-const AIAvatar = ({ placement_probability, missing_skills, result }) => {
+const AIAvatar = ({ placement_probability, result }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -18,24 +18,6 @@ const AIAvatar = ({ placement_probability, missing_skills, result }) => {
     recognition.interimResults = false;
     recognition.lang = 'en-US';
   }
-
-  useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      const initialMsgs = [
-        { role: 'ai', text: `Hello! I'm Tony, your AI Recruiter. I've analyzed your profile and I'm ready to help you prepare for your target company.` },
-        { role: 'ai', text: `You have a ${Math.round(placement_probability)}% chance of placement. ${placement_probability > 70 ? "That's quite competitive!" : "There is definitely room for improvement."}` }
-      ];
-      
-      let delay = 0;
-      initialMsgs.forEach((m, i) => {
-        setTimeout(() => {
-          setMessages(prev => [...prev, m]);
-          speak(m.text);
-        }, delay);
-        delay += 2500;
-      });
-    }
-  }, [isOpen]);
 
   const speak = (text) => {
     if ('speechSynthesis' in window) {
@@ -54,6 +36,25 @@ const AIAvatar = ({ placement_probability, missing_skills, result }) => {
       utterance.onend = () => setSpeaking(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      const initialMsgs = [
+        { role: 'ai', text: `Hello! I'm Tony, your AI Recruiter. I've analyzed your profile and I'm ready to help you prepare for your target company.` },
+        { role: 'ai', text: `You have a ${Math.round(placement_probability)}% chance of placement. ${placement_probability > 70 ? "That's quite competitive!" : "There is definitely room for improvement."}` }
+      ];
+      
+      let delay = 0;
+      initialMsgs.forEach((m) => {
+        setTimeout(() => {
+          setMessages(prev => [...prev, m]);
+          speak(m.text);
+        }, delay);
+        delay += 2500;
+      });
+    }
+   
+  }, [isOpen, messages.length, placement_probability]);
 
   const startListening = () => {
     if (!recognition) {
@@ -223,6 +224,7 @@ const AIAvatar = ({ placement_probability, missing_skills, result }) => {
           <form onSubmit={handleSendMessage} className="p-3 bg-slate-50 border-t border-slate-200 flex gap-2">
             <button 
               type="button"
+              // eslint-disable-next-line react-hooks/immutability
               onClick={startListening}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isListening ? 'bg-red-500 animate-pulse' : 'bg-slate-50 text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}
             >

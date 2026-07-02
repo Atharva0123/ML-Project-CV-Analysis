@@ -37,7 +37,7 @@ export const getDeviceFingerprint = async () => {
     ctx.font = 'bold 12px Georgia, serif';
     ctx.fillText('Device-Auth-Check', 2, 20);
     components.push(canvas.toDataURL());
-  } catch (e) {
+  } catch {
     components.push('canvas-blocked');
   }
 
@@ -51,7 +51,7 @@ export const getDeviceFingerprint = async () => {
         components.push(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
       }
     }
-  } catch (e) {
+  } catch {
     components.push('webgl-blocked');
   }
 
@@ -74,7 +74,7 @@ export const getDeviceFingerprint = async () => {
       oscillator.stop();
       context.close();
     }
-  } catch (e) {
+  } catch {
     components.push('audio-blocked');
   }
 
@@ -86,7 +86,7 @@ export const getDeviceFingerprint = async () => {
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  } catch (e) {
+  } catch {
     // Fallback: simple hash if SubtleCrypto not available
     let hash = 0;
     for (let i = 0; i < str.length; i++) {

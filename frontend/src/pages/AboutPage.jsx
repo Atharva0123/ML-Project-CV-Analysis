@@ -1,6 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   FiCpu, FiArrowRight, FiUsers, FiStar, FiZap,
   FiShield, FiGlobe, FiTarget, FiTrendingUp, FiHeart
@@ -36,6 +35,14 @@ const TIMELINE = [
   { year: '2026', event: 'Today: 2.4M+ users worldwide, powered by our next-generation AI engine v2.0.' },
 ];
 
+const BACKGROUND_SHAPES = [...Array(30)].map(() => ({
+  width: Math.random() * 200 + 50,
+  height: Math.random() * 200 + 50,
+  left: `${Math.random() * 100}%`,
+  top: `${Math.random() * 100}%`,
+  opacity: Math.random() * 0.5,
+}));
+
 export default function AboutPage() {
   const navigate = useNavigate();
 
@@ -44,15 +51,8 @@ export default function AboutPage() {
       {/* Hero */}
       <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 py-24 px-6 text-white text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-5">
-          {[...Array(30)].map((_, i) => (
-            <div key={i} className="absolute rounded-full bg-white"
-              style={{
-                width: Math.random() * 200 + 50,
-                height: Math.random() * 200 + 50,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: Math.random() * 0.5
-              }} />
+          {BACKGROUND_SHAPES.map((style, i) => (
+            <div key={i} className="absolute rounded-full bg-white" style={style} />
           ))}
         </div>
         <div className="relative max-w-3xl mx-auto">

@@ -1,7 +1,6 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Doughnut, Radar, Bar } from 'react-chartjs-2';
-import axios from 'axios';
-import html2pdf from 'html2pdf.js';
+import api from '../services/api';
 import ResumeHeatmap from './ResumeHeatmap';
 import CareerPathTree from './CareerPathTree';
 import BiometricInterview from './BiometricInterview';
@@ -352,7 +351,7 @@ const buildPDFContent = (result, skillPlan, weeklyRoutine, targetScore, totalUps
 // ============ Main Dashboard ============
 const Dashboard = ({ result, metrics, onBack }) => {
   const [showSettings, setShowSettings] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloading, _setIsDownloading] = useState(false);
   const [isBiometricOpen, setIsBiometricOpen] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
   const [mintTxHash, setMintTxHash] = useState(null);
@@ -361,7 +360,7 @@ const Dashboard = ({ result, metrics, onBack }) => {
   const [latestInterview, setLatestInterview] = useState(null);
 
   useEffect(() => {
-    axios.get('http://localhost:8000/market-pulse')
+    api.get('/market-pulse')
       .then(res => setMarketPulseData(res.data))
       .catch(err => console.error("Error loading market pulse", err));
   }, []);
@@ -370,6 +369,7 @@ const Dashboard = ({ result, metrics, onBack }) => {
     try {
       const saved = localStorage.getItem('tonycv_latest_interview');
       if (saved) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLatestInterview(JSON.parse(saved));
       }
     } catch (e) {
@@ -395,7 +395,7 @@ const Dashboard = ({ result, metrics, onBack }) => {
     );
   }, []);
 
-  const resetLearnedSkills = useCallback(() => {
+  const _resetLearnedSkills = useCallback(() => {
     setLearnedSkills([]);
     localStorage.removeItem('tonycv_learned_skills');
   }, []);
@@ -409,9 +409,9 @@ const Dashboard = ({ result, metrics, onBack }) => {
     matched_skills   = [],
     missing_skills   = [],
     github_analysis,
-    market_pulse_adjustments,
+    market_pulse_adjustments: _market_pulse_adjustments,
     hiring_analysis,
-    experience_level,
+    experience_level: _experience_level,
     match_details    = [],   // BERT per-skill breakdown — optional, never crashes
   } = result;
 
@@ -429,10 +429,10 @@ const Dashboard = ({ result, metrics, onBack }) => {
   const remainingSkills = missing_skills.filter(s => !learnedSkills.includes(s));
   const learnedCount = missing_skills.length - remainingSkills.length;
   const projectedScore = Math.round(Math.min(98, placement_probability + learnedCount * 12));
-  const remainingHours = skillPlan.filter(s => !learnedSkills.includes(s.skill)).reduce((sum, s) => sum + s.hours, 0);
+  const _remainingHours = skillPlan.filter(s => !learnedSkills.includes(s.skill)).reduce((sum, s) => sum + s.hours, 0);
 
   // Industry Benchmark data
-  const benchmarkData = {
+  const _benchmarkData = {
     avgCgpa: 8.2,
     avgSkillMatch: 78,
     topCandidateSkillMatch: 92,

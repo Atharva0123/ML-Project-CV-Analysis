@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -27,7 +27,7 @@ export default function ResumeRewriteAssistant() {
       if (!res.ok) throw new Error('Rewrite request failed');
       const data = await res.json();
       setResult(data);
-    } catch (e) {
+    } catch {
       setError('Failed to connect to the server. Please try again.');
     } finally {
       setLoading(false);

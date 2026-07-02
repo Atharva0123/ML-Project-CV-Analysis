@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import api from '../services/api';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import InputForm from '../components/InputForm';
 import { 
   FiFileText, FiCheck, FiArrowRight, FiCheckCircle, FiEdit3, 
@@ -21,16 +20,6 @@ import BusinessExecutiveTemplate from '../components/templates/BusinessExecutive
 import CreativeDesignerTemplate from '../components/templates/CreativeDesignerTemplate';
 import RegisterPopup from '../components/RegisterPopup';
 
-const isLocal =
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname.startsWith('192.168.') ||
-  window.location.hostname.startsWith('172.') ||
-  window.location.hostname.startsWith('10.');
-
-const API_BASE_URL = isLocal
-  ? `http://${window.location.hostname}:8000`
-  : 'https://tonycv-backend.onrender.com';
 
 const FALLBACK_COMPANIES = [
   'Google', 'Amazon', 'Microsoft', 'Meta', 'Apple',
@@ -322,7 +311,7 @@ function LiveResumePreview({ data, color, layout, photoEnabled, templateId }) {
 export default function Home() {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState(() => {
+  const [, setUser] = useState(() => {
     const cached = localStorage.getItem('tonycv_user');
     return cached ? JSON.parse(cached) : null;
   });
@@ -378,7 +367,7 @@ export default function Home() {
   // Wizard / Builder Console State
   const [showWizard, setShowWizard] = useState(false);
   const [step, setStep] = useState('option_select');
-  const [selectedOption, setSelectedOption] = useState(null);
+  const [, setSelectedOption] = useState(null);
 
   useEffect(() => {
     api.get(`/companies`).then(r => setCompanies(r.data?.companies || FALLBACK_COMPANIES)).catch(() => {});
@@ -414,7 +403,7 @@ export default function Home() {
       fd.append('file', file);
       fd.append('target_company', companies[0] || 'Google');
       fd.append('job_description', '');
-      const res = await axios.post(`${API_BASE_URL}/analyze`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const res = await api.post(`/analyze`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       navigate('/dashboard', { state: { analysisData: res.data } });
     } catch (err) {
       setError(err?.response?.data?.detail || 'Could not analyse resume. Please try again.');

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { FiArrowRight, FiClock, FiTag, FiTrendingUp, FiSearch } from 'react-icons/fi';
 
 const CATEGORIES = ['All', 'Resume Tips', 'Job Search', 'ATS Guide', 'Career Growth', 'Interview Prep'];
@@ -64,6 +63,12 @@ const ARTICLES = [
   },
 ];
 
+const BACKGROUND_DOTS = [...Array(20)].map(() => ({
+  left: `${Math.random() * 100}%`,
+  top: `${Math.random() * 100}%`,
+  opacity: Math.random(),
+}));
+
 export default function CareerBlogPage() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('All');
@@ -84,9 +89,9 @@ export default function CareerBlogPage() {
       {/* Hero */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 py-20 px-6 text-white text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          {[...Array(20)].map((_, i) => (
+          {BACKGROUND_DOTS.map((style, i) => (
             <div key={i} className="absolute w-1 h-1 bg-white rounded-full"
-              style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`, opacity: Math.random() }} />
+              style={style} />
           ))}
         </div>
         <div className="relative max-w-3xl mx-auto">

@@ -1,5 +1,4 @@
 import React, { useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiArrowRight, FiExternalLink, FiCheck, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 /**

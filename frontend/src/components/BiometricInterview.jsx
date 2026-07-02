@@ -1,8 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { FiMic, FiMicOff, FiClock, FiX, FiCheckCircle, FiAlertCircle, FiAward, FiArrowRight } from 'react-icons/fi';
-import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:8000';
+import api from '../services/api';
 
 const BiometricInterview = ({ isOpen, onClose }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -59,13 +57,13 @@ const BiometricInterview = ({ isOpen, onClose }) => {
       recognition.lang = 'en-US';
 
       recognition.onresult = (event) => {
-        let interimTranscript = '';
+        let _interimTranscript = '';
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript + ' ';
           } else {
-            interimTranscript += event.results[i][0].transcript;
+            _interimTranscript += event.results[i][0].transcript;
           }
         }
         if (finalTranscript) {
@@ -83,7 +81,7 @@ const BiometricInterview = ({ isOpen, onClose }) => {
       recognition.onend = () => {
         // Keep listening if user still intends to be in answering mode
         if (isListening) {
-          try { recognition.start(); } catch(e) {}
+          try { recognition.start(); } catch { /* ignore */ }
         }
       };
 
@@ -105,6 +103,7 @@ const BiometricInterview = ({ isOpen, onClose }) => {
       setIsAnswering(false);
       stopListening();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentQuestionIndex, isOpen, showResults]);
 
   // Timer loop
@@ -122,6 +121,7 @@ const BiometricInterview = ({ isOpen, onClose }) => {
       }, 1000);
     }
     return () => clearInterval(timerRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, isAnswering, timeLeft, showResults]);
 
   const startListening = () => {
@@ -138,7 +138,7 @@ const BiometricInterview = ({ isOpen, onClose }) => {
     setIsListening(false);
     try {
       recognitionRef.current?.stop();
-    } catch (e) {}
+    } catch { /* ignore */ }
   };
 
   const handleStartAnswering = () => {
@@ -166,7 +166,7 @@ const BiometricInterview = ({ isOpen, onClose }) => {
     const answerToSubmit = currentAnswer.trim();
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/evaluate-answer`, {
+      const response = await api.post(`/evaluate-answer`, {
         question: questions[currentQuestionIndex].text,
         user_answer: answerToSubmit || "No answer provided within the time limit."
       });

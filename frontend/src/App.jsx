@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { FiSearch, FiCpu, FiMenu, FiX, FiChevronDown } from 'react-icons/fi';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -97,7 +97,10 @@ function Navbar({ user, onLogout, onOpenRegister }) {
   };
 
   // Close mobile menu on route change
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  useEffect(() => { 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMobileOpen(false); 
+  }, [location.pathname]);
 
   const resumeDropItems = [
     { label: 'Resume Builder', to: '/resume-builder', icon: '🛠️' },

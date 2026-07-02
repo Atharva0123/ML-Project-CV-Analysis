@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { getDeviceFingerprint } from '../utils/deviceFingerprint';
 import {
   FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiShield,
@@ -7,9 +7,6 @@ import {
   FiArrowRight, FiRefreshCw, FiPhone
 } from 'react-icons/fi';
 
-const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ? 'http://localhost:8000'
-  : 'https://tonycv-backend.onrender.com';
 
 // ── Password Strength Meter ──────────────────────────────────────────────────
 const PasswordStrength = ({ password }) => {
@@ -18,7 +15,7 @@ const PasswordStrength = ({ password }) => {
     { label: 'Uppercase letter (A–Z)', ok: /[A-Z]/.test(password) },
     { label: 'Lowercase letter (a–z)', ok: /[a-z]/.test(password) },
     { label: 'Number (0–9)', ok: /\d/.test(password) },
-    { label: 'Special character (!@#$...)', ok: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password) },
+    { label: 'Special character (!@#$...)', ok: /[!@#$%^&*()_+\-=[\]{}|;:,.<>?]/.test(password) },
   ];
   const passed = checks.filter(c => c.ok).length;
   const strength = passed === 5 ? 'Strong' : passed >= 3 ? 'Moderate' : passed >= 1 ? 'Weak' : '';
@@ -55,7 +52,7 @@ const PasswordStrength = ({ password }) => {
 };
 
 // ── Google Sign-In Button ────────────────────────────────────────────────────
-const GoogleSignInButton = ({ onSuccess, onError, fingerprint, isLoading }) => {
+const GoogleSignInButton = ({ onSuccess, onError, isLoading }) => {
   const handleGoogleClick = () => {
     // Google Identity Services flow
     if (!window.google) {
@@ -80,7 +77,7 @@ const GoogleSignInButton = ({ onSuccess, onError, fingerprint, isLoading }) => {
             email: payload.email,
             google_id: payload.sub,
           });
-        } catch (e) {
+        } catch {
           onError('Failed to process Google sign-in. Please try again.');
         }
       },
@@ -170,7 +167,7 @@ const AuthPage = ({ onAuthSuccess }) => {
           setIsLoading(false);
           return;
         }
-        const res = await axios.post(`${API_BASE_URL}/auth/register`, {
+        const res = await api.post(`/auth/register`, {
           email, 
           name, 
           password, 
@@ -182,7 +179,7 @@ const AuthPage = ({ onAuthSuccess }) => {
         localStorage.setItem('tonycv_user', JSON.stringify(res.data.user));
         onAuthSuccess(res.data.user);
       } else {
-        const res = await axios.post(`${API_BASE_URL}/auth/login`, {
+        const res = await api.post(`/auth/login`, {
           email, password, device_fingerprint: deviceFingerprint
         });
         localStorage.setItem('tonycv_token', res.data.access_token);
@@ -202,7 +199,7 @@ const AuthPage = ({ onAuthSuccess }) => {
     setError('');
     setIsLoading(true);
     try {
-      const res = await axios.post(`${API_BASE_URL}/auth/google`, {
+      const res = await api.post(`/auth/google`, {
         google_id_token, name: gName, email: gEmail, google_id,
         device_fingerprint: deviceFingerprint
       });
