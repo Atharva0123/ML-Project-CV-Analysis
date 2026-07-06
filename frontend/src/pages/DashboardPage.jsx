@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Dashboard from '../components/Dashboard';
-import { motion } from 'framer-motion';
 
 
 export default function DashboardPage() {
